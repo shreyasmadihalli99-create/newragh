@@ -12,6 +12,8 @@
             --text: #333;
             --white: #ffffff;
             --gray: #f4f4f4;
+            --danger: #e74c3c;
+            --success: #27ae60;
         }
 
         body {
@@ -22,6 +24,66 @@
             padding: 0;
             overflow-x: hidden;
         }
+
+        /* --- SECRET ADMIN STYLES --- */
+        #admin-star {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.15; /* Nearly invisible to customers */
+            background: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        #admin-panel {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            z-index: 10000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .admin-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            min-width: 70px;
+        }
+
+        .btn-on { background: var(--success); color: white; }
+        .btn-off { background: var(--danger); color: white; }
+        /* -------------------------- */
 
         /* SUCCESS SCREEN */
         #success-screen {
@@ -222,6 +284,17 @@
 </head>
 <body>
 
+    <div id="admin-star" onclick="checkAdmin()">★</div>
+
+    <div id="admin-panel">
+        <div class="admin-header">
+            <h2 style="margin:0; color:var(--primary)">Vaibhav Inventory</h2>
+            <button onclick="closeAdmin()" style="padding:10px; border-radius:8px; border:none; background:#333; color:white;">EXIT</button>
+        </div>
+        <p style="font-size:0.85rem; color:#777;">Turn items OFF to hide them from your customers.</p>
+        <div id="admin-controls-list"></div>
+    </div>
+
     <div id="success-screen">
         <h1 style="color: #2e7d32; font-size: 2.5rem;">✔</h1>
         <h2 style="color: var(--text);">Order Successfully Applied!</h2>
@@ -275,81 +348,83 @@
     </main>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJgGcutCXXsOnih_Ny1okXEEJOJOPNlTx7kXryK4nXr5Slhc443TbG5ONkczEUKQht/exec";
     let userLocationURL = "";
     let cart = {};
     const CONVENIENCE_FEE = 5;
     const DELIVERY_CHARGE = 10;
 
+    // Load disabled items from memory
+    let disabledItems = JSON.parse(localStorage.getItem('vaibhav_disabled')) || {};
+
     const menu = {
         "Drinks & Breakfast": [
-            {name: "Tea", price: 15}, {name: "Coffee", price: 25}, {name: "KT", price: 25},
-            {name: "Bournvita", price: 25}, {name: "Milk", price: 20}, {name: "Majjige", price: 25},
-            {name: "Uppitu (Upma)", price: 25}, {name: "Kesari Bath (Sheera)", price: 25},
-            {name: "Idli", price: 35}, {name: "Vada", price: 50}, {name: "Idli Vada", price: 60},
-            {name: "Rava Idli (Single)", price: 30}, {name: "Rava Idli (Full)", price: 50},
-            {name: "Puri (Single)", price: 35}, {name: "Puri (Full)", price: 60},
-            {name: "Palav (Single)", price: 35}, {name: "Palav (Full)", price: 55},
-            {name: "Masala Dosa", price: 60}, {name: "Cut Masala", price: 65}, {name: "Plain Dosa", price: 50},
-            {name: "Set Dosa (Single)", price: 40}, {name: "Set Dosa (Full)", price: 60},
-            {name: "Sada Dosa (Single)", price: 35}, {name: "Sada Dosa (Full)", price: 55},
-            {name: "Uttappa", price: 60}, {name: "Cut Uttappa", price: 65}, {name: "Tomato Omelet", price: 60},
-            {name: "Spl Dosa", price: 80}, {name: "Shavige Uppit", price: 30},
-            {name: "Bajji / Pakoda (Single)", price: 20}, {name: "Bajji / Pakoda (Full)", price: 35},
-            {name: "Gulab Jamoon (Single)", price: 20}, {name: "Gulab Jamoon (Full)", price: 50},
-            {name: "Pav Bhaji", price: 50}, {name: "Misal Pav", price: 50}, {name: "Aloo Bonda", price: 35},
-            {name: "Rice Samber", price: 50}
+            {id: "v1", name: "Tea", price: 15}, {id: "v2", name: "Coffee", price: 25}, {id: "v3", name: "KT", price: 25},
+            {id: "v4", name: "Bournvita", price: 25}, {id: "v5", name: "Milk", price: 20}, {id: "v6", name: "Majjige", price: 25},
+            {id: "v7", name: "Uppitu (Upma)", price: 25}, {id: "v8", name: "Kesari Bath (Sheera)", price: 25},
+            {id: "v9", name: "Idli", price: 35}, {id: "v10", name: "Vada", price: 50}, {id: "v11", name: "Idli Vada", price: 60},
+            {id: "v12", name: "Rava Idli (Single)", price: 30}, {id: "v13", name: "Rava Idli (Full)", price: 50},
+            {id: "v14", name: "Puri (Single)", price: 35}, {id: "v15", name: "Puri (Full)", price: 60},
+            {id: "v16", name: "Palav (Single)", price: 35}, {id: "v17", name: "Palav (Full)", price: 55},
+            {id: "v18", name: "Masala Dosa", price: 60}, {id: "v19", name: "Cut Masala", price: 65}, {id: "v20", name: "Plain Dosa", price: 50},
+            {id: "v21", name: "Set Dosa (Single)", price: 40}, {id: "v22", name: "Set Dosa (Full)", price: 60},
+            {id: "v23", name: "Sada Dosa (Single)", price: 35}, {id: "v24", name: "Sada Dosa (Full)", price: 55},
+            {id: "v25", name: "Uttappa", price: 60}, {id: "v26", name: "Cut Uttappa", price: 65}, {id: "v27", name: "Tomato Omelet", price: 60},
+            {id: "v28", name: "Spl Dosa", price: 80}, {id: "v29", name: "Shavige Uppit", price: 30},
+            {id: "v30", name: "Bajji / Pakoda (Single)", price: 20}, {id: "v31", name: "Bajji / Pakoda (Full)", price: 35},
+            {id: "v32", name: "Gulab Jamoon (Single)", price: 20}, {id: "v33", name: "Gulab Jamoon (Full)", price: 50},
+            {id: "v34", name: "Pav Bhaji", price: 50}, {id: "v35", name: "Misal Pav", price: 50}, {id: "v36", name: "Aloo Bonda", price: 35},
+            {id: "v37", name: "Rice Samber", price: 50}
         ],
         "Soups & Starters": [
-            {name: "Tomato Soup", price: 80}, {name: "Veg Manchow Soup", price: 100},
-            {name: "Veg Hot & Sour Soup", price: 90}, {name: "Veg Clear Soup", price: 90},
-            {name: "Green Salad", price: 50}, {name: "Gobi Manchurian", price: 80},
-            {name: "Gobi Chilli", price: 100}, {name: "Gobi - 65", price: 110},
-            {name: "Paneer Manchurian", price: 150}, {name: "Paneer Chilli", price: 150},
-            {name: "Paneer - 65", price: 130}, {name: "Paneer Pepper Dry", price: 140},
-            {name: "Paneer Pakoda", price: 150}, {name: "Paneer Satay", price: 150},
-            {name: "Veg Manchurian", price: 110}, {name: "Veg Chilli", price: 120},
-            {name: "Mushroom Manchurian", price: 150}, {name: "Mushroom Chilli", price: 150},
-            {name: "Mushroom Pepper Dry", price: 140}, {name: "Finger Chips", price: 80},
-            {name: "Harbara Kebab", price: 140}, {name: "Aloo Jeera", price: 100}
+            {id: "s1", name: "Tomato Soup", price: 80}, {id: "s2", name: "Veg Manchow Soup", price: 100},
+            {id: "s3", name: "Veg Hot & Sour Soup", price: 90}, {id: "s4", name: "Veg Clear Soup", price: 90},
+            {id: "s5", name: "Green Salad", price: 50}, {id: "s6", name: "Gobi Manchurian", price: 80},
+            {id: "s7", name: "Gobi Chilli", price: 100}, {id: "s8", name: "Gobi - 65", price: 110},
+            {id: "s9", name: "Paneer Manchurian", price: 150}, {id: "s10", name: "Paneer Chilli", price: 150},
+            {id: "s11", name: "Paneer - 65", price: 130}, {id: "s12", name: "Paneer Pepper Dry", price: 140},
+            {id: "s13", name: "Paneer Pakoda", price: 150}, {id: "s14", name: "Paneer Satay", price: 150},
+            {id: "s15", name: "Veg Manchurian", price: 110}, {id: "s16", name: "Veg Chilli", price: 120},
+            {id: "s17", name: "Mushroom Manchurian", price: 150}, {id: "s18", name: "Mushroom Chilli", price: 150},
+            {id: "s19", name: "Mushroom Pepper Dry", price: 140}, {id: "s20", name: "Finger Chips", price: 80},
+            {id: "s21", name: "Harbara Kebab", price: 140}, {id: "s22", name: "Aloo Jeera", price: 100}
         ],
         "Veg Main Course": [
-            {name: "Dal Fry", price: 90}, {name: "Dal Tadka", price: 100}, {name: "Dal Kolhapuri", price: 100},
-            {name: "Dal Palak", price: 110}, {name: "Mix Veg", price: 120}, {name: "Veg Kolhapuri", price: 130},
-            {name: "Veg Hydrabadi", price: 140}, {name: "Veg Makhanwala", price: 140}, {name: "Veg Kadai", price: 150},
-            {name: "Veg Bhuna Masala", price: 150}, {name: "Veg Maratha", price: 160}, {name: "Veg Handi", price: 160},
-            {name: "Veg Malvani", price: 170}, {name: "Veg Diwani Handi", price: 200}, {name: "Palak Mutter", price: 120},
-            {name: "Aloo Mutter", price: 120}, {name: "Aloo Gobi", price: 120}, {name: "Green Peas Masala", price: 110},
-            {name: "Plain Palak", price: 100}, {name: "Akka Masoor", price: 100}, {name: "Chana Masala", price: 110},
-            {name: "Baingan Masala", price: 100}, {name: "Bhindi Masala", price: 100}, {name: "Capsicum Masala", price: 110},
-            {name: "Veg Jaipuri", price: 140}, {name: "Veg Patiala", price: 130}, {name: "Shev Bhaji", price: 130}
+            {id: "m1", name: "Dal Fry", price: 90}, {id: "m2", name: "Dal Tadka", price: 100}, {id: "m3", name: "Dal Kolhapuri", price: 100},
+            {id: "m4", name: "Dal Palak", price: 110}, {id: "m5", name: "Mix Veg", price: 120}, {id: "m6", name: "Veg Kolhapuri", price: 130},
+            {id: "m7", name: "Veg Hydrabadi", price: 140}, {id: "m8", name: "Veg Makhanwala", price: 140}, {id: "m9", name: "Veg Kadai", price: 150},
+            {id: "m10", name: "Veg Bhuna Masala", price: 150}, {id: "m11", name: "Veg Maratha", price: 160}, {id: "m12", name: "Veg Handi", price: 160},
+            {id: "m13", name: "Veg Malvani", price: 170}, {id: "m14", name: "Veg Diwani Handi", price: 200}, {id: "m15", name: "Palak Mutter", price: 120},
+            {id: "m16", name: "Aloo Mutter", price: 120}, {id: "m17", name: "Aloo Gobi", price: 120}, {id: "m18", name: "Green Peas Masala", price: 110},
+            {id: "m19", name: "Plain Palak", price: 100}, {id: "m20", name: "Akka Masoor", price: 100}, {id: "m21", name: "Chana Masala", price: 110},
+            {id: "m22", name: "Baingan Masala", price: 100}, {id: "m23", name: "Bhindi Masala", price: 100}, {id: "m24", name: "Capsicum Masala", price: 110},
+            {id: "m25", name: "Veg Jaipuri", price: 140}, {id: "m26", name: "Veg Patiala", price: 130}, {id: "m27", name: "Shev Bhaji", price: 130}
         ],
         "Paneer & Special": [
-            {name: "Palak Paneer", price: 140}, {name: "Paneer Masala", price: 140},
-            {name: "Paneer Shahi Kurma", price: 180}, {name: "Paneer Hydrabadi", price: 180},
-            {name: "Paneer Tikka Masala", price: 170}, {name: "Paneer Butter Masala", price: 170},
-            {name: "Paneer Kadai", price: 170}, {name: "Paneer Kurma (Sweet)", price: 170},
-            {name: "Paneer Pasanda", price: 180}, {name: "Paneer Basket", price: 190},
-            {name: "Mushroom Masala", price: 150}, {name: "Mushroom Kadai", price: 160},
-            {name: "Veg Kofta", price: 150}, {name: "Malai Kofta", price: 200}, {name: "Paneer Kofta", price: 180},
-            {name: "Kaju Masala", price: 190}, {name: "Kaju Paneer Masala", price: 220}, {name: "Kaju Kadai", price: 200},
-            {name: "Kaju Makhanwala", price: 200}, {name: "Kaju Kolhapuri", price: 200}, {name: "Kaju Kurma (Sweet)", price: 200}
+            {id: "p1", name: "Palak Paneer", price: 140}, {id: "p2", name: "Paneer Masala", price: 140},
+            {id: "p3", name: "Paneer Shahi Kurma", price: 180}, {id: "p4", name: "Paneer Hydrabadi", price: 180},
+            {id: "p5", name: "Paneer Tikka Masala", price: 170}, {id: "p6", name: "Paneer Butter Masala", price: 170},
+            {id: "p7", name: "Paneer Kadai", price: 170}, {id: "p8", name: "Paneer Kurma (Sweet)", price: 170},
+            {id: "p9", name: "Paneer Pasanda", price: 180}, {id: "p10", name: "Paneer Basket", price: 190},
+            {id: "p11", name: "Mushroom Masala", price: 150}, {id: "p12", name: "Mushroom Kadai", price: 160},
+            {id: "p13", name: "Veg Kofta", price: 150}, {id: "p14", name: "Malai Kofta", price: 200}, {id: "p15", name: "Paneer Kofta", price: 180},
+            {id: "p16", name: "Kaju Masala", price: 190}, {id: "p17", name: "Kaju Paneer Masala", price: 220}, {id: "p18", name: "Kaju Kadai", price: 200},
+            {id: "p19", name: "Kaju Makhanwala", price: 200}, {id: "p20", name: "Kaju Kolhapuri", price: 200}, {id: "p21", name: "Kaju Kurma (Sweet)", price: 200}
         ],
-        "Breads & Papad": [
-            {name: "Rosted Papad", price: 20}, {name: "Fry Papad", price: 25}, {name: "Masala Papad", price: 40},
-            {name: "Roti", price: 20}, {name: "Butter Roti", price: 25}, {name: "Naan", price: 40},
-            {name: "Butter Naan", price: 50}, {name: "Kulcha", price: 35}, {name: "Butter Kulcha", price: 40},
-            {name: "Parotta", price: 35}, {name: "Butter Parotta", price: 40}, {name: "Aloo Paratha", price: 80},
-            {name: "Paneer Paratha", price: 100}, {name: "Veg Paratha", price: 80}, {name: "Onion Paratha", price: 80},
-            {name: "Garlic Naan", price: 60}
+        "Roti & Papad": [
+            {id: "r1", name: "Rosted Papad", price: 20}, {id: "r2", name: "Fry Papad", price: 25}, {id: "r3", name: "Masala Papad", price: 40},
+            {id: "r4", name: "Roti", price: 20}, {id: "r5", name: "Butter Roti", price: 25}, {id: "r6", name: "Naan", price: 40},
+            {id: "r7", name: "Butter Naan", price: 50}, {id: "r8", name: "Kulcha", price: 35}, {id: "r9", name: "Butter Kulcha", price: 40},
+            {id: "r10", name: "Parotta", price: 35}, {id: "r11", name: "Butter Parotta", price: 40}, {id: "r12", name: "Aloo Paratha", price: 80},
+            {id: "r13", name: "Paneer Paratha", price: 100}, {id: "r14", name: "Veg Paratha", price: 80}, {id: "r15", name: "Onion Paratha", price: 80},
+            {id: "r16", name: "Garlic Naan", price: 60}
         ],
         "Rice & Meals": [
-            {name: "Plain Rice (Full)", price: 70}, {name: "Jeera Rice (Full)", price: 100},
-            {name: "Masala Rice (Full)", price: 110}, {name: "Ghee Rice (Full)", price: 140},
-            {name: "Curd Rice (Full)", price: 130}, {name: "Veg Fried Rice (Full)", price: 120},
-            {name: "Schezwan Fried Rice (Full)", price: 150}, {name: "Veg Biryani (Full)", price: 160},
-            {name: "Veg Noodles", price: 130}, {name: "Dal Kichadi", price: 130},
-            {name: "Meals", price: 90}, {name: "Roti Meals", price: 100}
+            {id: "rr1", name: "Plain Rice (Full)", price: 70}, {id: "rr2", name: "Jeera Rice (Full)", price: 100},
+            {id: "rr3", name: "Masala Rice (Full)", price: 110}, {id: "rr4", name: "Ghee Rice (Full)", price: 140},
+            {id: "rr5", name: "Curd Rice (Full)", price: 130}, {id: "rr6", name: "Veg Fried Rice (Full)", price: 120},
+            {id: "rr7", name: "Schezwan Fried Rice (Full)", price: 150}, {id: "rr8", name: "Veg Biryani (Full)", price: 160},
+            {id: "rr9", name: "Veg Noodles", price: 130}, {id: "rr10", name: "Dal Kichadi", price: 130},
+            {id: "rr11", name: "Meals", price: 90}, {id: "rr12", name: "Roti Meals", price: 100}
         ]
     };
 
@@ -358,9 +433,54 @@
         "Soups & Starters": "https://www.indianhealthyrecipes.com/wp-content/uploads/2022/02/gobi-manchurian-cauliflower-manchurian.jpg",
         "Veg Main Course": "https://cdn2.stylecraze.com/wp-content/uploads/2014/09/Mushroom-Curry.jpg",
         "Paneer & Special": "https://tse1.mm.bing.net/th/id/OIP.NkQB3pu2-a7w0FZNaEv5xwHaFA?pid=Api&rs=1&c=1&qlt=95&w=170&h=115",
-        "Breads & Papad": "https://static.iwmbuzz.com/wp-content/uploads/2022/10/3-easy-and-delicious-masala-papad-recipes-to-make-at-home-2-920x518.jpg",
-        "Rice & Meals": "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=800&q=80"
+        "Roti & Papad": "https://static.iwmbuzz.com/wp-content/uploads/2022/10/3-easy-and-delicious-masala-papad-recipes-to-make-at-home-2-920x518.jpg",
+        "Rice & Meals": "https://www.sharmispassions.com/wp-content/uploads/2014/11/SchezwanFriedRice5.jpg"
     };
+
+    // --- ADMIN SECRET LOGIC ---
+    function checkAdmin() {
+        const pass = prompt("Enter Access Code:");
+        if (pass === "20106669") { openAdmin(); }
+        else { alert("Wrong Code."); }
+    }
+
+    function openAdmin() {
+        const panel = document.getElementById('admin-panel');
+        const list = document.getElementById('admin-controls-list');
+        list.innerHTML = "";
+        panel.style.display = 'block';
+
+        for(let cat in menu) {
+            list.innerHTML += `<h3 style="background:#eee; padding:5px; margin-top:20px;">${cat}</h3>`;
+            menu[cat].forEach(item => {
+                const isOff = disabledItems[item.id] === true;
+                list.innerHTML += `
+                    <div class="admin-item-row">
+                        <span>${item.name}</span>
+                        <button class="status-btn ${isOff ? 'btn-off' : 'btn-on'}" 
+                            onclick="toggleItem('${item.id}', this)">
+                            ${isOff ? 'OFF' : 'ON'}
+                        </button>
+                    </div>`;
+            });
+        }
+    }
+
+    function toggleItem(id, btn) {
+        if (disabledItems[id]) {
+            delete disabledItems[id];
+            btn.innerText = "ON"; btn.className = "status-btn btn-on";
+        } else {
+            disabledItems[id] = true;
+            btn.innerText = "OFF"; btn.className = "status-btn btn-off";
+        }
+        localStorage.setItem('vaibhav_disabled', JSON.stringify(disabledItems));
+        const currentCat = document.getElementById('current-category-name').innerText;
+        if(currentCat) renderItems(currentCat);
+    }
+
+    function closeAdmin() { document.getElementById('admin-panel').style.display = 'none'; }
+    // --------------------------
 
     function openMenu() {
         document.getElementById('hero-page').classList.add('hidden');
@@ -375,7 +495,7 @@
     function renderTabs() {
         const container = document.getElementById('tabs');
         container.innerHTML = '';
-        Object.keys(menu).forEach((cat, index) => {
+        Object.keys(menu).forEach((cat) => {
             const btn = document.createElement('button');
             btn.className = `tab-btn`;
             btn.innerText = cat;
@@ -396,8 +516,10 @@
         const container = document.getElementById('menu-items-container');
         container.innerHTML = '';
         menu[cat].forEach(item => {
+            // Check if hidden by admin
+            if (disabledItems[item.id]) return;
+
             const currentQty = cart[item.name] ? cart[item.name].qty : 0;
-            const cleanId = item.name.replace(/[^a-zA-Z0-9]/g, ''); 
             const div = document.createElement('div');
             div.className = 'menu-item';
             div.innerHTML = `
@@ -419,11 +541,8 @@
             cart[name].qty = 0;
             delete cart[name];
         }
-
-        // INSTANT UI UPDATE
         const qtyDisplay = btnElement.parentElement.querySelector('.qty-num');
         qtyDisplay.innerText = cart[name] ? cart[name].qty : 0;
-
         calculateTotal();
     }
 
@@ -462,48 +581,34 @@
                 btn.style.background = "#2e7d32";
                 document.getElementById('confirm-btn').style.display = 'block';
             }, () => {
-                alert("GPS Access Denied. Please enable location.");
+                alert("GPS Access Denied.");
                 btn.innerText = "📍 Share Live Location (Required)";
             }, {enableHighAccuracy: true});
         }
     }
 
-    async function checkoutOrder() {
+    function checkoutOrder() {
         const name = document.getElementById('cust-name').value.trim();
         const phone = document.getElementById('cust-phone').value.trim();
-        
-        if(!name || phone.length < 10) return alert("Please fill Name and Mobile Number correctly.");
+        if(!name || phone.length < 10) return alert("Fill Name & Mobile.");
 
         const grandTotal = document.getElementById('cart-grand-total').innerText;
         let orderSummary = "";
-        for (let k in cart) { 
-            if(cart[k].qty > 0) orderSummary += `${k}(x${cart[k].qty}), `; 
-        }
+        for (let k in cart) { if(cart[k].qty > 0) orderSummary += `${k}(x${cart[k].qty}), `; }
 
-        const payload = {
-            hotel: "Raghavendra Vaibhav",
-            customerName: name,
-            phone: phone,
-            order: orderSummary.slice(0, -2),
-            total: "₹" + grandTotal,
-            location: userLocationURL
-        };
+        const finalDetails = `Customer: ${name} | Order: ${orderSummary.slice(0, -2)} | Phone: ${phone} | Loc: ${userLocationURL}`;
 
-        const btn = document.getElementById('confirm-btn');
-        btn.innerText = "Processing...";
-        btn.disabled = true;
+        // --- GOOGLE FORM REDIRECT START ---
+        const hotelName = encodeURIComponent("Hotel Raghavendra Vaibhav");
+        const detailsValue = encodeURIComponent(finalDetails);
+        const totalValue = encodeURIComponent("₹" + grandTotal);
 
-        try {
-            await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            document.getElementById('success-screen').style.display = 'flex';
-            document.getElementById('menu-page').style.opacity = '0.1';
-        } catch (e) {
-            alert("Error placing order. Try again.");
-            btn.disabled = false;
-            btn.innerText = "Confirm Order";
-        }
+        const googleFormLink = `https://docs.google.com/forms/d/e/1FAIpQLSfYRAvs7z-azuisOZy1ywFpxduRPRBKy4a5b7cXIfCujq7X3g/viewform?usp=pp_url&entry.692866444=${hotelName}&entry.1256648211=${detailsValue}&entry.7360624=${totalValue}`;
+
+        window.open(googleFormLink, '_blank');
+        document.getElementById('success-screen').style.display = 'flex';
+        // --- GOOGLE FORM REDIRECT END ---
     }
 </script>
-
 </body>
 </html>
