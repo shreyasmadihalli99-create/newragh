@@ -290,58 +290,35 @@
             <h2 style="margin:0; color:var(--primary)">Vaibhav Inventory</h2>
             <button onclick="closeAdmin()" style="padding:10px; border-radius:8px; border:none; background:#333; color:white;">EXIT</button>
         </div>
-        <p style="font-size:0.85rem; color:#777;">Turn items OFF to hide them from your customers.</p>
         <div id="admin-controls-list"></div>
     </div>
 
     <div id="success-screen">
         <h1 style="color: #2e7d32; font-size: 2.5rem;">✔</h1>
-        <h2 style="color: var(--text);">Order Successfully Applied!</h2>
-        <p>Your order for Raghavendra Vaibhav is being prepared.</p>
+        <h2 style="color: var(--text);">Order Placed Successfully!</h2>
+        <p>Check your Google Sheet now.</p>
         <button class="explore-btn" onclick="location.reload()">Back to Menu</button>
     </div>
 
     <section id="hero-page">
-        <h1 style="font-size: 2.5rem; margin-bottom: 0;">Hotel Raghavendra Vaibhav</h1>
-        <p style="font-size: 1.2rem; margin-top: 10px;">Authentic Udupi Taste</p>
+        <h1>Hotel Raghavendra Vaibhav</h1>
         <button class="explore-btn" onclick="openMenu()">Explore Menu</button>
     </section>
 
     <main id="menu-page">
         <div class="tabs-container" id="tabs"></div>
-
-        <div class="category-img-wrapper">
-            <img id="category-image" class="category-banner" src="" alt="Category Banner">
-        </div>
-
+        <div class="category-img-wrapper"><img id="category-image" class="category-banner" src=""></div>
         <div class="menu-section">
             <h2 id="current-category-name" class="category-header"></h2>
             <div id="menu-items-container"></div>
         </div>
 
         <div class="cart-popup" id="cart-popup">
-            <div style="font-weight:bold; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom: 10px;">Delivery Details</div>
-            
-            <input type="text" id="cust-name" class="delivery-input" placeholder="Full Name" 
-                   oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
-            
-            <input type="tel" id="cust-phone" class="delivery-input" placeholder="10-Digit Mobile Number" 
-                   maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-
-            <button class="loc-btn" id="loc-btn" onclick="getLocation()">📍 Share Live Location (Required)</button>
-
-            <div id="cart-items-container" style="max-height: 15vh; overflow-y: auto; margin-bottom: 10px;"></div>
-            
-            <div id="fees-container" style="border-top: 1px dashed #ccc; padding-top: 10px; margin-bottom: 10px;">
-                <div class="fee-row"><span>Convenience Fee</span><span>₹5</span></div>
-                <div class="fee-row"><span>Delivery Charge</span><span>₹10</span></div>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--primary); font-size:1.3rem; margin-bottom: 10px;">
-                <span>Total Amount</span>
-                <span>₹<span id="cart-grand-total">0</span></span>
-            </div>
-            
+            <input type="text" id="cust-name" class="delivery-input" placeholder="Full Name">
+            <input type="tel" id="cust-phone" class="delivery-input" placeholder="10-Digit Mobile" maxlength="10">
+            <button class="loc-btn" id="loc-btn" onclick="getLocation()">📍 Share Live Location</button>
+            <div id="cart-items-container" style="max-height: 15vh; overflow-y: auto;"></div>
+            <div style="font-weight:bold; color:var(--primary); font-size:1.3rem; margin: 10px 0;">Total: ₹<span id="cart-grand-total">0</span></div>
             <button id="confirm-btn" class="checkout-btn" onclick="checkoutOrder()">Confirm Order</button>
         </div>
     </main>
@@ -349,80 +326,45 @@
 <script>
     let userLocationURL = "";
     let cart = {};
-    const CONVENIENCE_FEE = 5;
-    const DELIVERY_CHARGE = 10;
-
     let disabledItems = JSON.parse(localStorage.getItem('vaibhav_disabled')) || {};
 
     const menu = {
         "Drinks & Breakfast": [
             {id: "v1", name: "Tea", price: 15}, {id: "v2", name: "Coffee", price: 25}, {id: "v3", name: "KT", price: 25},
             {id: "v4", name: "Bournvita", price: 25}, {id: "v5", name: "Milk", price: 20}, {id: "v6", name: "Majjige", price: 25},
-            {id: "v7", name: "Uppitu (Upma)", price: 25}, {id: "v8", name: "Kesari Bath (Sheera)", price: 25},
+            {id: "v7", name: "Uppitu (Upma)", price: 25}, {id: "v8", name: "Kesari Bath", price: 25},
             {id: "v9", name: "Idli", price: 35}, {id: "v10", name: "Vada", price: 50}, {id: "v11", name: "Idli Vada", price: 60},
-            {id: "v12", name: "Rava Idli (Single)", price: 30}, {id: "v13", name: "Rava Idli (Full)", price: 50},
-            {id: "v14", name: "Puri (Single)", price: 35}, {id: "v15", name: "Puri (Full)", price: 60},
-            {id: "v16", name: "Palav (Single)", price: 35}, {id: "v17", name: "Palav (Full)", price: 55},
-            {id: "v18", name: "Masala Dosa", price: 60}, {id: "v19", name: "Cut Masala", price: 65}, {id: "v20", name: "Plain Dosa", price: 50},
-            {id: "v21", name: "Set Dosa (Single)", price: 40}, {id: "v22", name: "Set Dosa (Full)", price: 60},
-            {id: "v23", name: "Sada Dosa (Single)", price: 35}, {id: "v24", name: "Sada Dosa (Full)", price: 55},
-            {id: "v25", name: "Uttappa", price: 60}, {id: "v26", name: "Cut Uttappa", price: 65}, {id: "v27", name: "Tomato Omelet", price: 60},
-            {id: "v28", name: "Spl Dosa", price: 80}, {id: "v29", name: "Shavige Uppit", price: 30},
-            {id: "v30", name: "Bajji / Pakoda (Single)", price: 20}, {id: "v31", name: "Bajji / Pakoda (Full)", price: 35},
-            {id: "v32", name: "Gulab Jamoon (Single)", price: 20}, {id: "v33", name: "Gulab Jamoon (Full)", price: 50},
-            {id: "v34", name: "Pav Bhaji", price: 50}, {id: "v35", name: "Misal Pav", price: 50}, {id: "v36", name: "Aloo Bonda", price: 35},
-            {id: "v37", name: "Rice Samber", price: 50}
+            {id: "v12", name: "Rava Idli (Full)", price: 50}, {id: "v13", name: "Puri (Full)", price: 60},
+            {id: "v14", name: "Palav (Full)", price: 55}, {id: "v15", name: "Masala Dosa", price: 60},
+            {id: "v16", name: "Plain Dosa", price: 50}, {id: "v17", name: "Set Dosa", price: 60},
+            {id: "v18", name: "Uttappa", price: 60}, {id: "v19", name: "Pav Bhaji", price: 50},
+            {id: "v20", name: "Misal Pav", price: 50}, {id: "v21", name: "Rice Samber", price: 50}
         ],
         "Soups & Starters": [
-            {id: "s1", name: "Tomato Soup", price: 80}, {id: "s2", name: "Veg Manchow Soup", price: 100},
-            {id: "s3", name: "Veg Hot & Sour Soup", price: 90}, {id: "s4", name: "Veg Clear Soup", price: 90},
-            {id: "s5", name: "Green Salad", price: 50}, {id: "s6", name: "Gobi Manchurian", price: 80},
-            {id: "s7", name: "Gobi Chilli", price: 100}, {id: "s8", name: "Gobi - 65", price: 110},
-            {id: "s9", name: "Paneer Manchurian", price: 150}, {id: "s10", name: "Paneer Chilli", price: 150},
-            {id: "s11", name: "Paneer - 65", price: 130}, {id: "s12", name: "Paneer Pepper Dry", price: 140},
-            {id: "s13", name: "Paneer Pakoda", price: 150}, {id: "s14", name: "Paneer Satay", price: 150},
-            {id: "s15", name: "Veg Manchurian", price: 110}, {id: "s16", name: "Veg Chilli", price: 120},
-            {id: "s17", name: "Mushroom Manchurian", price: 150}, {id: "s18", name: "Mushroom Chilli", price: 150},
-            {id: "s19", name: "Mushroom Pepper Dry", price: 140}, {id: "s20", name: "Finger Chips", price: 80},
-            {id: "s21", name: "Harbara Kebab", price: 140}, {id: "s22", name: "Aloo Jeera", price: 100}
+            {id: "s1", name: "Tomato Soup", price: 80}, {id: "s2", name: "Gobi Manchurian", price: 80},
+            {id: "s3", name: "Gobi Chilli", price: 100}, {id: "s4", name: "Paneer Chilli", price: 150},
+            {id: "s5", name: "Veg Manchurian", price: 110}, {id: "s6", name: "Mushroom Chilli", price: 150},
+            {id: "s7", name: "Finger Chips", price: 80}
         ],
         "Veg Main Course": [
-            {id: "m1", name: "Dal Fry", price: 90}, {id: "m2", name: "Dal Tadka", price: 100}, {id: "m3", name: "Dal Kolhapuri", price: 100},
-            {id: "m4", name: "Dal Palak", price: 110}, {id: "m5", name: "Mix Veg", price: 120}, {id: "m6", name: "Veg Kolhapuri", price: 130},
-            {id: "m7", name: "Veg Hydrabadi", price: 140}, {id: "m8", name: "Veg Makhanwala", price: 140}, {id: "m9", name: "Veg Kadai", price: 150},
-            {id: "m10", name: "Veg Bhuna Masala", price: 150}, {id: "m11", name: "Veg Maratha", price: 160}, {id: "m12", name: "Veg Handi", price: 160},
-            {id: "m13", name: "Veg Malvani", price: 170}, {id: "m14", name: "Veg Diwani Handi", price: 200}, {id: "m15", name: "Palak Mutter", price: 120},
-            {id: "m16", name: "Aloo Mutter", price: 120}, {id: "m17", name: "Aloo Gobi", price: 120}, {id: "m18", name: "Green Peas Masala", price: 110},
-            {id: "m19", name: "Plain Palak", price: 100}, {id: "m20", name: "Akka Masoor", price: 100}, {id: "m21", name: "Chana Masala", price: 110},
-            {id: "m22", name: "Baingan Masala", price: 100}, {id: "m23", name: "Bhindi Masala", price: 100}, {id: "m24", name: "Capsicum Masala", price: 110},
-            {id: "m25", name: "Veg Jaipuri", price: 140}, {id: "m26", name: "Veg Patiala", price: 130}, {id: "m27", name: "Shev Bhaji", price: 130}
+            {id: "m1", name: "Dal Fry", price: 90}, {id: "m2", name: "Dal Tadka", price: 100},
+            {id: "m3", name: "Veg Kolhapuri", price: 130}, {id: "m4", name: "Veg Hyderabadi", price: 140},
+            {id: "m5", name: "Veg Kadai", price: 150}, {id: "m6", name: "Aloo Gobi", price: 120},
+            {id: "m7", name: "Akka Masoor", price: 100}, {id: "m8", name: "Shev Bhaji", price: 130}
         ],
         "Paneer & Special": [
-            {id: "p1", name: "Palak Paneer", price: 140}, {id: "p2", name: "Paneer Masala", price: 140},
-            {id: "p3", name: "Paneer Shahi Kurma", price: 180}, {id: "p4", name: "Paneer Hydrabadi", price: 180},
-            {id: "p5", name: "Paneer Tikka Masala", price: 170}, {id: "p6", name: "Paneer Butter Masala", price: 170},
-            {id: "p7", name: "Paneer Kadai", price: 170}, {id: "p8", name: "Paneer Kurma (Sweet)", price: 170},
-            {id: "p9", name: "Paneer Pasanda", price: 180}, {id: "p10", name: "Paneer Basket", price: 190},
-            {id: "p11", name: "Mushroom Masala", price: 150}, {id: "p12", name: "Mushroom Kadai", price: 160},
-            {id: "p13", name: "Veg Kofta", price: 150}, {id: "p14", name: "Malai Kofta", price: 200}, {id: "p15", name: "Paneer Kofta", price: 180},
-            {id: "p16", name: "Kaju Masala", price: 190}, {id: "p17", name: "Kaju Paneer Masala", price: 220}, {id: "p18", name: "Kaju Kadai", price: 200},
-            {id: "p19", name: "Kaju Makhanwala", price: 200}, {id: "p20", name: "Kaju Kolhapuri", price: 200}, {id: "p21", name: "Kaju Kurma (Sweet)", price: 200}
+            {id: "p1", name: "Palak Paneer", price: 140}, {id: "p2", name: "Paneer Butter Masala", price: 170},
+            {id: "p3", name: "Paneer Kadai", price: 170}, {id: "p4", name: "Mushroom Masala", price: 150},
+            {id: "p5", name: "Veg Kofta", price: 150}, {id: "p6", name: "Kaju Masala", price: 190},
+            {id: "p7", name: "Kaju Paneer Masala", price: 220}
         ],
-        "Roti & Papad": [
-            {id: "r1", name: "Rosted Papad", price: 20}, {id: "r2", name: "Fry Papad", price: 25}, {id: "r3", name: "Masala Papad", price: 40},
-            {id: "r4", name: "Roti", price: 20}, {id: "r5", name: "Butter Roti", price: 25}, {id: "r6", name: "Naan", price: 40},
-            {id: "r7", name: "Butter Naan", price: 50}, {id: "r8", name: "Kulcha", price: 35}, {id: "r9", name: "Butter Kulcha", price: 40},
-            {id: "r10", name: "Parotta", price: 35}, {id: "r11", name: "Butter Parotta", price: 40}, {id: "r12", name: "Aloo Paratha", price: 80},
-            {id: "r13", name: "Paneer Paratha", price: 100}, {id: "r14", name: "Veg Paratha", price: 80}, {id: "r15", name: "Onion Paratha", price: 80},
-            {id: "r16", name: "Garlic Naan", price: 60}
-        ],
-        "Rice & Meals": [
-            {id: "rr1", name: "Plain Rice (Full)", price: 70}, {id: "rr2", name: "Jeera Rice (Full)", price: 100},
-            {id: "rr3", name: "Masala Rice (Full)", price: 110}, {id: "rr4", name: "Ghee Rice (Full)", price: 140},
-            {id: "rr5", name: "Curd Rice (Full)", price: 130}, {id: "rr6", name: "Veg Fried Rice (Full)", price: 120},
-            {id: "rr7", name: "Schezwan Fried Rice (Full)", price: 150}, {id: "rr8", name: "Veg Biryani (Full)", price: 160},
-            {id: "rr9", name: "Veg Noodles", price: 130}, {id: "rr10", name: "Dal Kichadi", price: 130},
-            {id: "rr11", name: "Meals", price: 90}, {id: "rr12", name: "Roti Meals", price: 100}
+        "Roti & Rice": [
+            {id: "r1", name: "Roti", price: 20}, {id: "r2", name: "Butter Roti", price: 25},
+            {id: "r3", name: "Naan", price: 40}, {id: "r4", name: "Butter Naan", price: 50},
+            {id: "r5", name: "Aloo Paratha", price: 80}, {id: "r6", name: "Plain Rice", price: 70},
+            {id: "r7", name: "Jeera Rice", price: 100}, {id: "r8", name: "Veg Fried Rice", price: 120},
+            {id: "r9", name: "Veg Biryani", price: 160}, {id: "r10", name: "Dal Kichadi", price: 130},
+            {id: "r11", name: "Meals", price: 90}
         ]
     };
 
@@ -431,52 +373,34 @@
         "Soups & Starters": "https://www.indianhealthyrecipes.com/wp-content/uploads/2022/02/gobi-manchurian-cauliflower-manchurian.jpg",
         "Veg Main Course": "https://cdn2.stylecraze.com/wp-content/uploads/2014/09/Mushroom-Curry.jpg",
         "Paneer & Special": "https://tse1.mm.bing.net/th/id/OIP.NkQB3pu2-a7w0FZNaEv5xwHaFA?pid=Api&rs=1&c=1&qlt=95&w=170&h=115",
-        "Roti & Papad": "https://static.iwmbuzz.com/wp-content/uploads/2022/10/3-easy-and-delicious-masala-papad-recipes-to-make-at-home-2-920x518.jpg",
-        "Rice & Meals": "https://www.sharmispassions.com/wp-content/uploads/2014/11/SchezwanFriedRice5.jpg"
+        "Roti & Rice": "https://static.iwmbuzz.com/wp-content/uploads/2022/10/3-easy-and-delicious-masala-papad-recipes-to-make-at-home-2-920x518.jpg"
     };
 
     function checkAdmin() {
-        const pass = prompt("Enter Access Code:");
-        if (pass === "20106669") { openAdmin(); }
-        else { alert("Wrong Code."); }
-    }
-
-    function openAdmin() {
-        const panel = document.getElementById('admin-panel');
-        const list = document.getElementById('admin-controls-list');
-        list.innerHTML = "";
-        panel.style.display = 'block';
-
-        for(let cat in menu) {
-            list.innerHTML += `<h3 style="background:#eee; padding:5px; margin-top:20px;">${cat}</h3>`;
-            menu[cat].forEach(item => {
-                const isOff = disabledItems[item.id] === true;
-                list.innerHTML += `
-                    <div class="admin-item-row">
-                        <span>${item.name}</span>
-                        <button class="status-btn ${isOff ? 'btn-off' : 'btn-on'}" 
-                            onclick="toggleItem('${item.id}', this)">
-                            ${isOff ? 'OFF' : 'ON'}
-                        </button>
-                    </div>`;
-            });
+        if (prompt("Access Code:") === "20106669") {
+            const panel = document.getElementById('admin-panel');
+            const list = document.getElementById('admin-controls-list');
+            list.innerHTML = "";
+            panel.style.display = 'block';
+            for(let cat in menu) {
+                list.innerHTML += `<h3 style="background:#eee; padding:5px; margin-top:20px;">${cat}</h3>`;
+                menu[cat].forEach(item => {
+                    const isOff = disabledItems[item.id] === true;
+                    list.innerHTML += `<div class="admin-item-row"><span>${item.name}</span>
+                        <button class="status-btn ${isOff ? 'btn-off' : 'btn-on'}" onclick="toggleItem('${item.id}', this)">${isOff ? 'OFF' : 'ON'}</button></div>`;
+                });
+            }
         }
     }
 
     function toggleItem(id, btn) {
-        if (disabledItems[id]) {
-            delete disabledItems[id];
-            btn.innerText = "ON"; btn.className = "status-btn btn-on";
-        } else {
-            disabledItems[id] = true;
-            btn.innerText = "OFF"; btn.className = "status-btn btn-off";
-        }
+        disabledItems[id] = !disabledItems[id];
+        btn.innerText = disabledItems[id] ? "OFF" : "ON";
+        btn.className = `status-btn ${disabledItems[id] ? 'btn-off' : 'btn-on'}`;
         localStorage.setItem('vaibhav_disabled', JSON.stringify(disabledItems));
-        const currentCat = document.getElementById('current-category-name').innerText;
-        if(currentCat) renderItems(currentCat);
     }
 
-    function closeAdmin() { document.getElementById('admin-panel').style.display = 'none'; }
+    function closeAdmin() { document.getElementById('admin-panel').style.display = 'none'; location.reload(); }
 
     function openMenu() {
         document.getElementById('hero-page').classList.add('hidden');
@@ -513,115 +437,63 @@
         container.innerHTML = '';
         menu[cat].forEach(item => {
             if (disabledItems[item.id]) return;
-            const currentQty = cart[item.name] ? cart[item.name].qty : 0;
+            const qty = cart[item.name] ? cart[item.name].qty : 0;
             const div = document.createElement('div');
             div.className = 'menu-item';
-            div.innerHTML = `
-                <div class="item-name">${item.name}</div>
-                <div class="price-align">₹${item.price}</div>
+            div.innerHTML = `<div class="item-name">${item.name}</div><div class="price-align">₹${item.price}</div>
                 <div class="qty-box">
-                    <button class="qty-btn" onclick="update(this, '${item.name}', ${item.price}, -1)">-</button>
-                    <span class="qty-num" style="font-weight:bold; min-width:20px; text-align:center">${currentQty}</span>
-                    <button class="qty-btn" onclick="update(this, '${item.name}', ${item.price}, 1)">+</button>
+                    <button class="qty-btn" onclick="update('${item.name}', ${item.price}, -1)">-</button>
+                    <span style="min-width:20px; text-align:center">${qty}</span>
+                    <button class="qty-btn" onclick="update('${item.name}', ${item.price}, 1)">+</button>
                 </div>`;
             container.appendChild(div);
         });
     }
 
-    function update(btnElement, name, price, delta) {
+    function update(name, price, delta) {
         if(!cart[name]) cart[name] = {qty: 0, price: price};
         cart[name].qty += delta;
-        if(cart[name].qty <= 0) {
-            cart[name].qty = 0;
-            delete cart[name];
-        }
-        const qtyDisplay = btnElement.parentElement.querySelector('.qty-num');
-        qtyDisplay.innerText = cart[name] ? cart[name].qty : 0;
-        calculateTotal();
-    }
-
-    function calculateTotal() {
-        let itemsSubtotal = 0; let cartHTML = ''; let activeCount = 0;
-        for (let key in cart) {
-            if (cart[key].qty > 0) {
-                activeCount++;
-                let itemTotal = cart[key].qty * cart[key].price;
-                itemsSubtotal += itemTotal;
-                cartHTML += `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size: 0.95rem;">
-                        <span>${key} x ${cart[key].qty}</span>
-                        <span>₹${itemTotal}</span>
-                    </div>`;
-            }
-        }
-        
-        const popup = document.getElementById('cart-popup');
-        if (activeCount > 0) {
-            document.getElementById('cart-items-container').innerHTML = cartHTML;
-            document.getElementById('cart-grand-total').innerText = itemsSubtotal + CONVENIENCE_FEE + DELIVERY_CHARGE;
-            popup.classList.add('active');
-        } else {
-            popup.classList.remove('active');
-        }
+        if(cart[name].qty <= 0) delete cart[name];
+        let subtotal = 0; let active = 0;
+        for(let k in cart) { subtotal += cart[k].qty * cart[k].price; active++; }
+        document.getElementById('cart-grand-total').innerText = subtotal > 0 ? subtotal + 15 : 0;
+        document.getElementById('cart-popup').classList.toggle('active', active > 0);
+        renderItems(document.getElementById('current-category-name').innerText);
     }
 
     function getLocation() {
         const btn = document.getElementById('loc-btn');
         if (navigator.geolocation) {
-            btn.innerText = "🛰️ Accessing GPS...";
+            btn.innerText = "🛰️ Fetching GPS...";
             navigator.geolocation.getCurrentPosition((pos) => {
+                // FIXED: GPS numbers now inject correctly
                 userLocationURL = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                btn.innerText = "✅ Location Shared";
+                btn.innerText = "✅ Location Locked";
                 btn.style.background = "#2e7d32";
                 document.getElementById('confirm-btn').style.display = 'block';
-            }, () => {
-                alert("GPS Access Denied.");
-                btn.innerText = "📍 Share Live Location (Required)";
-            }, {enableHighAccuracy: true});
+            }, () => alert("Enable GPS"), {enableHighAccuracy: true});
         }
     }
 
-    function checkoutOrder() {
-        const name = document.getElementById('cust-name').value.trim();
-        const phone = document.getElementById('cust-phone').value.trim();
-        if(!name || phone.length < 10) return alert("Fill Name & 10-digit Mobile.");
+    async function checkoutOrder() {
+        const name = document.getElementById('cust-name').value;
+        const phone = document.getElementById('cust-phone').value;
+        if(!name || phone.length < 10) return alert("Fill Name & Phone");
 
-        const grandTotal = document.getElementById('cart-grand-total').innerText;
-        let orderSummary = "";
-        for (let k in cart) { if(cart[k].qty > 0) orderSummary += `${k}(x${cart[k].qty}), `; }
+        let summary = "";
+        for (let k in cart) summary += `${k}(x${cart[k].qty}), `;
 
-        const finalOrder = orderSummary.slice(0, -2);
-        const hotel = "Hotel Raghavendra Vaibhav";
+        const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSe6-a7FLkxR36p6mqQ0E3xo5djjNLgZErgC2tM_scPmMvSVMA/formResponse";
+        const data = new URLSearchParams();
+        data.append("entry.1603933071", "Hotel Raghavendra Vaibhav");
+        data.append("entry.433588684", `NAME: ${name} | PH: ${phone} | ORDER: ${summary.slice(0,-2)} | MAP: ${userLocationURL}`);
+        data.append("entry.736903222", "₹" + document.getElementById('cart-grand-total').innerText);
 
-        // --- SILENT FORM SUBMISSION ---
-        // This sends the data to your Google Form WITHOUT opening it in the browser
-        const formActionURL = "https://script.google.com/macros/s/AKfycbw8rji8VEuDhPHZqlHks47fgzGgNBmtl_jCcS-dIdvzbZUwFiE7m2EHrK-HszC9d0qt/exec";
-        
-        const formData = new FormData();
-        formData.append("entry.692866444", hotel);        // Hotel Column
-        formData.append("entry.1256648211", finalOrder);   // Details Column (Items)
-        formData.append("entry.7360624", "₹" + grandTotal); // Total Column
-        
-        // If your Form has extra columns for Name, Phone, and Location, 
-        // you would add them here. For now, we'll assume they go into the 'Details' or 'Hotel' logic.
-
-        // Visual feedback for the customer
-        const btn = document.getElementById('confirm-btn');
-        btn.innerText = "Processing...";
-        btn.disabled = true;
-
-        fetch(formActionURL, {
-            method: "POST",
-            mode: "no-cors",
-            body: formData
-        }).then(() => {
+        document.getElementById('confirm-btn').innerText = "Sending...";
+        try {
+            await fetch(FORM_URL, { method: 'POST', mode: 'no-cors', body: data });
             document.getElementById('success-screen').style.display = 'flex';
-            document.getElementById('menu-page').style.display = 'none';
-        }).catch(() => {
-            alert("Connection error. Data might not have sent.");
-            btn.disabled = false;
-            btn.innerText = "Confirm Order";
-        });
+        } catch (e) { alert("Check Internet"); }
     }
 </script>
 </body>
