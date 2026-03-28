@@ -33,7 +33,7 @@
             z-index: 9999;
             font-size: 24px;
             cursor: pointer;
-            opacity: 0.15; /* Nearly invisible to customers */
+            opacity: 0.15;
             background: white;
             border-radius: 50%;
             width: 40px;
@@ -83,7 +83,6 @@
 
         .btn-on { background: var(--success); color: white; }
         .btn-off { background: var(--danger); color: white; }
-        /* -------------------------- */
 
         /* SUCCESS SCREEN */
         #success-screen {
@@ -323,7 +322,7 @@
         <div class="cart-popup" id="cart-popup">
             <div style="font-weight:bold; border-bottom:1px solid #ddd; padding-bottom:10px; margin-bottom: 10px;">Delivery Details</div>
             
-            <input type="text" id="cust-name" class="delivery-input" placeholder="Full Name (Letters Only)" 
+            <input type="text" id="cust-name" class="delivery-input" placeholder="Full Name" 
                    oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
             
             <input type="tel" id="cust-phone" class="delivery-input" placeholder="10-Digit Mobile Number" 
@@ -353,7 +352,6 @@
     const CONVENIENCE_FEE = 5;
     const DELIVERY_CHARGE = 10;
 
-    // Load disabled items from memory
     let disabledItems = JSON.parse(localStorage.getItem('vaibhav_disabled')) || {};
 
     const menu = {
@@ -437,7 +435,6 @@
         "Rice & Meals": "https://www.sharmispassions.com/wp-content/uploads/2014/11/SchezwanFriedRice5.jpg"
     };
 
-    // --- ADMIN SECRET LOGIC ---
     function checkAdmin() {
         const pass = prompt("Enter Access Code:");
         if (pass === "20106669") { openAdmin(); }
@@ -480,7 +477,6 @@
     }
 
     function closeAdmin() { document.getElementById('admin-panel').style.display = 'none'; }
-    // --------------------------
 
     function openMenu() {
         document.getElementById('hero-page').classList.add('hidden');
@@ -516,9 +512,7 @@
         const container = document.getElementById('menu-items-container');
         container.innerHTML = '';
         menu[cat].forEach(item => {
-            // Check if hidden by admin
             if (disabledItems[item.id]) return;
-
             const currentQty = cart[item.name] ? cart[item.name].qty : 0;
             const div = document.createElement('div');
             div.className = 'menu-item';
@@ -590,24 +584,44 @@
     function checkoutOrder() {
         const name = document.getElementById('cust-name').value.trim();
         const phone = document.getElementById('cust-phone').value.trim();
-        if(!name || phone.length < 10) return alert("Fill Name & Mobile.");
+        if(!name || phone.length < 10) return alert("Fill Name & 10-digit Mobile.");
 
         const grandTotal = document.getElementById('cart-grand-total').innerText;
         let orderSummary = "";
         for (let k in cart) { if(cart[k].qty > 0) orderSummary += `${k}(x${cart[k].qty}), `; }
 
-        const finalDetails = `Customer: ${name} | Order: ${orderSummary.slice(0, -2)} | Phone: ${phone} | Loc: ${userLocationURL}`;
+        const finalOrder = orderSummary.slice(0, -2);
+        const hotel = "Hotel Raghavendra Vaibhav";
 
-        // --- GOOGLE FORM REDIRECT START ---
-        const hotelName = encodeURIComponent("Hotel Raghavendra Vaibhav");
-        const detailsValue = encodeURIComponent(finalDetails);
-        const totalValue = encodeURIComponent("₹" + grandTotal);
+        // --- SILENT FORM SUBMISSION ---
+        // This sends the data to your Google Form WITHOUT opening it in the browser
+        const formActionURL = "https://docs.google.com/forms/d/e/1FAIpQLSfYRAvs7z-azuisOZy1ywFpxduRPRBKy4a5b7cXIfCujq7X3g/formResponse";
+        
+        const formData = new FormData();
+        formData.append("entry.692866444", hotel);        // Hotel Column
+        formData.append("entry.1256648211", finalOrder);   // Details Column (Items)
+        formData.append("entry.7360624", "₹" + grandTotal); // Total Column
+        
+        // If your Form has extra columns for Name, Phone, and Location, 
+        // you would add them here. For now, we'll assume they go into the 'Details' or 'Hotel' logic.
 
-        const googleFormLink = `https://docs.google.com/forms/d/e/1FAIpQLSfYRAvs7z-azuisOZy1ywFpxduRPRBKy4a5b7cXIfCujq7X3g/viewform?usp=pp_url&entry.692866444=${hotelName}&entry.1256648211=${detailsValue}&entry.7360624=${totalValue}`;
+        // Visual feedback for the customer
+        const btn = document.getElementById('confirm-btn');
+        btn.innerText = "Processing...";
+        btn.disabled = true;
 
-        window.open(googleFormLink, '_blank');
-        document.getElementById('success-screen').style.display = 'flex';
-        // --- GOOGLE FORM REDIRECT END ---
+        fetch(formActionURL, {
+            method: "POST",
+            mode: "no-cors",
+            body: formData
+        }).then(() => {
+            document.getElementById('success-screen').style.display = 'flex';
+            document.getElementById('menu-page').style.display = 'none';
+        }).catch(() => {
+            alert("Connection error. Data might not have sent.");
+            btn.disabled = false;
+            btn.innerText = "Confirm Order";
+        });
     }
 </script>
 </body>
